@@ -6,6 +6,6 @@ verbose_logs.json
 *vcd
 result/
 past_result/
-
+*.csv
 parsetab.py
 parser.out

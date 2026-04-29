@@ -226,7 +226,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--dataset-type",
         type=int,
-        default=0,
+        default=2,
         help="[0:Verireason | 1:Deepcircuitx | 2:PyraNet | 3:AutoBench]",
     )
 

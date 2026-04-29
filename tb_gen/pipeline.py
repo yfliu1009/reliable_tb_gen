@@ -596,6 +596,9 @@ class QuestionGeneration(LLMGeneration):
         prompt = "\n\n".join(
             [self.context, ctx.problem.answer, Codev_r1_in_context_suffix]
         )
+        
+        print(ctx.problem.answer)
+        
         ctx.length += len(prompt)
 
         response = self.llm.generate(prompt)
