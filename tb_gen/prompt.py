@@ -1,3 +1,5 @@
+from textwrap import dedent
+
 # QUESTION_GUIDE = """Does the following Verilog coding problem provide sensible, clear, and complete information for solving?
 # If so, output YES enclosed by three asterisks.
 # Otherwise, if you consider this problem unsolvable, output DROP enclosed by three asterisks.
@@ -25,13 +27,14 @@ Similarly, enclose its corresponding solution with [BEGIN SOL] and [END SOL]."""
 # Most importantly, the testbench must print the number of passed test cases enclosed by triple backticks to the terminal.
 # Enclose your testbench code with [BEGIN] and [DONE]. Only provide me the testbench and nothing else."""
 
-TB_GUIDE = """Generate a testbench for the following Verilog coding problem.
+TB_GUIDE = """Act as a senior Verilog verification engineer.
+Generate a testbench for the following Verilog coding problem.
 The testbench must include 10 test cases covering a broad range of scenarios.
 Also, it must print meaningful information about the failed test cases to help with debugging.
-If there are multiple subtasks in one test case, the code must pass all subtasks to be considered a successful test case.
-Most importantly, the testbench must print the number of passed test cases enclosed by triple backticks to the terminal.
-The number of passed test cases must be in the range of 0 to 10, inclusive.
-Enclose your testbench code with [BEGIN] and [DONE]. Only provide me the testbench and nothing else."""
+Most importantly, the testbench must print the number of passed test cases and the number of total test cases enclosed by triple backticks to the terminal.
+Format: ```Number of passed test cases: 8``` and ```Number of total test cases: 10```.
+Enclose your testbench code with [BEGIN] and [DONE]. Only provide me the testbench and nothing else.
+example: [BEGIN]\n Testbench \n [DONE]"""
 
 # FIX_GUIDE = """Below is a Verilog coding problem along with an attempted solution and a draft testbench.
 # Reported errors when running the solution against the testbench are also shown below.
@@ -47,9 +50,9 @@ Below is a Verilog coding problem along with an attempted solution and a draft t
 Reported errors when running the solution against the testbench are also shown below.
 Based on the provided information, fix the testbench to reflect the true intention of the Verilog coding problem. Indicate your decision by outputting TESTBENCH enclosed by three asterisks.
 Enclose your fixed code with [BEGIN] and [DONE] and do not output anything else.
-If you decide to fix the testbench, remember that it must include 10 test cases covering a broad range of scenarios.
+If you decide to fix the testbench, the testbench must print the number of passed test cases and the number of total test cases enclosed by triple backticks to the terminal.
+Format: ```Number of passed test cases: 8``` and ```Number of total test cases: 10```.
 Also, it must print meaningful information about the failed test cases to help with debugging.
-Most importantly, the testbench must print the number of passed test cases enclosed by triple backticks to the terminal.
 """
 
 TESTCASE_GUIDE = """Act as a senior Verilog verification engineer.
@@ -99,3 +102,48 @@ DEEPX_PREF = (
 
 
 ### no solution fix now
+
+
+WELL_WRITTEN_GUIDE = """Act as a senior Verilog verification engineer. Your task is to determine whether the given verilog spec and verilog code are well written and consistent with each other. 
+If you think the spec and code are well written and consistent, output YES enclosed by three asterisks. 
+If you think the spec and code are utterly unsolvable, output DROP enclosed by three asterisks.
+Otherwise, if you think the spec and code are not well written or inconsistent, output NO enclosed by three asterisks and provide a revised version of the spec and code that are well written and consistent with each other. 
+Enclose the revised spec with [BEGIN PROB] and [END PROB]. Similarly, enclose the revised code with [BEGIN SOL] and [END SOL].
+Here is the verilog spec and code:"""
+
+REASON_ANSWER_GUIDE_V2 = dedent(
+    """
+    You are an expert Verilog designer. Analyze the given specification carefully and generate the corresponding Verilog code.
+    
+    Follow this structured approach:
+    1. First, understand the module interface (inputs, outputs, their widths and purposes)
+    2. Analyze the functional requirements and behavioral specifications
+    3. Identify key design patterns (combinational logic, sequential logic, state machines, etc.)
+    4. Consider edge cases and special conditions (reset behavior, clock domains, etc.)
+    5. Plan the implementation strategy before writing code
+    
+    Provide your response in the following format:
+    
+    <reasoning>
+    [Explain your understanding of the problem]
+    [Describe the approach you will take]
+    [Identify key implementation details and considerations]
+    [Explain any design decisions or trade-offs]
+    </reasoning>
+    
+    <solution>
+    ```verilog
+    [Your complete Verilog module implementation]
+    ```
+    </solution>
+    
+    Guidelines for your solution:
+    - Ensure the module interface matches the specification exactly
+    - Use appropriate Verilog constructs (always blocks, assign statements, etc.)
+    - Handle all specified input conditions and edge cases
+    - Include proper reset behavior if specified
+    - Use clear, readable code with meaningful signal names
+    - Ensure the logic is synthesizable and follows good design practices
+    - Do not include testbench code in your solution
+    """
+)

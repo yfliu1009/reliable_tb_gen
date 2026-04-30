@@ -15,6 +15,8 @@ from .prompt import (
     Codev_r1_in_context_prefix,
     Codev_r1_in_context_suffix,
     reason_answer_guide,
+    WELL_WRITTEN_GUIDE,
+    REASON_ANSWER_GUIDE_V2
 )
 from .llm import LLM
 from .enums import QuestionRevisionResult, TestbenchRevisionBranch
@@ -24,8 +26,9 @@ QUESTION_REVISION = (
     True  # if false, skip question revision -> directly generate testbench
 )
 
-TESTCASE_PIPELINE = True  # if true, use testcase generation pipeline
-
+TESTCASE_PIPELINE = False  # if true, use testcase generation pipeline
+HINT_FILTERED_PIPELINE = False  # if true, use hint-filtered pipeline for testbench revision
+PREGENERATION = False  # if true, pre-generate all feedbacks for each step and store in ctx.feedbacks
 
 # base
 class Step(ABC):
@@ -87,9 +90,10 @@ class LLMGeneration(Step):
         return ctx
 
 
+### DONE
 class QuestionRevision(LLMGeneration):
     def __init__(
-        self, llm: LLM, contexts: List[str] = [QUESTION_GUIDE], feedback_key: str = None
+        self, llm: LLM, contexts: List[str] = [WELL_WRITTEN_GUIDE], feedback_key: str = None
     ):
         super().__init__(llm, contexts, feedback_key)
 
@@ -97,7 +101,7 @@ class QuestionRevision(LLMGeneration):
         import re
 
         response = self.llm.generate(
-            "\n\n".join([self.context, ctx.problem.quoted_question])
+            "\n\n".join([self.context, ctx.problem.quoted_question, ctx.problem.quoted_answer])
         )
         ctx.feedbacks[self.feedback_key] = response
 
@@ -169,7 +173,7 @@ class TBForQuestionRevision(LLMGeneration):
 
         return ctx
 
-
+#DONE
 class TestbenchGeneration(LLMGeneration):
     def __init__(
         self, llm: LLM, contexts: List[str] = [TB_GUIDE], feedback_key: str = None
@@ -192,7 +196,7 @@ class TestbenchGeneration(LLMGeneration):
 
         return ctx
 
-
+#DONE
 class TestbenchRevision(LLMGeneration):
     _label = "testbench_revision"  # used for recording number of revisions performed
 
@@ -227,6 +231,9 @@ class TestbenchRevision(LLMGeneration):
                 ]
             )
         )
+
+        ctx.length += len(prompt)
+
         ctx.feedbacks[self.feedback_key] = response
 
         has_sol = re.search(r"\*+\s*SOLUTION\s*\*+", response) is not None
@@ -307,6 +314,9 @@ class RefinementPipeline:
                 else steps
             )
 
+
+        print(self.steps)
+
     def __call__(self, ctx: RefinementCtx) -> RefinementCtx:
         print(f"start running {ctx.problem.id}...")
         for step in self.steps:
@@ -369,7 +379,7 @@ class TBForQuesRefinementPipeline:
 
         return ctx
 
-
+#DONE
 class TestcaseGeneration(LLMGeneration):
     def __init__(
         self, llm: LLM, contexts: List[str] = [TESTCASE_GUIDE], feedback_key: str = None
@@ -405,7 +415,7 @@ class TestcaseGeneration(LLMGeneration):
             ctx.finished = True
         return ctx
 
-
+#DONE
 class TestbenchGeneration_TC(LLMGeneration):
     def __init__(
         self,
@@ -454,7 +464,7 @@ class TestbenchGeneration_TC(LLMGeneration):
 
         return ctx
 
-
+#DONE
 class TestbenchSilmulation_TC(Step):
     _label = (
         "testbench_simulation"  # used for recording number of simulations performed
@@ -499,7 +509,7 @@ class TestbenchSilmulation_TC(Step):
 
         return ctx
 
-
+#DONE
 class TestbenchRevision_TC(LLMGeneration):
     _label = "testbench_revision"  # used for recording number of revisions performed
 
@@ -582,7 +592,7 @@ class TestbenchRevision_TC(LLMGeneration):
 
         return ctx
 
-
+#DONE
 class QuestionGeneration(LLMGeneration):
     def __init__(
         self,
@@ -597,7 +607,7 @@ class QuestionGeneration(LLMGeneration):
             [self.context, ctx.problem.answer, Codev_r1_in_context_suffix]
         )
         
-        print(ctx.problem.answer)
+        # print(ctx.problem.answer)
         
         ctx.length += len(prompt)
 
@@ -632,12 +642,12 @@ class QuestionGeneration(LLMGeneration):
 
         return ctx
 
-
+#DONE
 class SolutionGeneration(LLMGeneration):
     def __init__(
         self,
         llm: LLM,
-        contexts: List[str] = [reason_answer_guide],
+        contexts: List[str] = [REASON_ANSWER_GUIDE_V2],
         feedback_key: str = None,
     ):
         super().__init__(llm, contexts, feedback_key=feedback_key)
