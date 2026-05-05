@@ -16,7 +16,8 @@ from .prompt import (
     Codev_r1_in_context_suffix,
     reason_answer_guide,
     WELL_WRITTEN_GUIDE,
-    REASON_ANSWER_GUIDE_V2
+    REASON_ANSWER_GUIDE_V2,
+    HINT_FILTER
 )
 from .llm import LLM
 from .enums import QuestionRevisionResult, TestbenchRevisionBranch
@@ -691,5 +692,37 @@ class SolutionGeneration(LLMGeneration):
 
         # print(ctx.problem.answer, "\n###new solution###\n")
         # print(ctx.problem.solution_reasoning_trace, "\n###new reasoning trace###\n")
+
+        return ctx
+
+
+class HintFilter(LLMGeneration):
+    def __init__(
+        self, llm: LLM, contexts: List[str] = [HINT_FILTER], feedback_key: str = None
+    ):
+        super().__init__(llm, contexts, feedback_key)
+
+    def run(self, ctx: RefinementCtx):
+        import re
+
+        response = self.llm.generate(
+            "\n\n".join([self.context, ctx.problem.quoted_question, ctx.problem.quoted_answer])
+        )
+        ctx.feedbacks[self.feedback_key] = response
+
+        if response:
+            if re.search(r"\*+\s*NO\s*\*+", response) is not None:
+                ctx.logs["hint_filter"] = "PASS"
+            elif re.search(r"\*+\s*YES\s*\*+", response) is not None:
+                tmp_ques = extract_verilog_code(response, "[BEGIN PROB]", "[END PROB]")
+                if tmp_ques:
+                    ctx.logs["hint_filter"] = "FIXED"
+                    ctx.problem.question = tmp_ques
+                else:
+                    ctx.logs["hint_filter"] = "NO_SPEC"
+        else:
+            # TODO: we could try a few more times here
+            ctx.logs["question_state"] = "ERROR"
+            ctx.finished = True
 
         return ctx
