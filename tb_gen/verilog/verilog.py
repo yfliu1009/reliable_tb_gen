@@ -43,7 +43,7 @@ def simulate(i: int, code: str, tb: str) -> str:
         except subprocess.CalledProcessError as e:
             return e.output
         except subprocess.TimeoutExpired as e:
-            return e.output.decode("utf-8") if e.output else ""
+            return e.output.decode("utf-8", errors="ignore") if e.output else ""
 
 
 def get_tb_score(text: str) -> int:
