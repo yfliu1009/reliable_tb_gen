@@ -168,20 +168,20 @@ def main(
             dataset[org_i]["input_len"] = input_len
             # dataset[org_i]["testcases"] = testcases
 
-            if ctx.problem.question_reasoning_trace:
-                dataset[org_i][
-                    "question_reasoning_trace"
-                ] = ctx.problem.question_reasoning_trace
-            if ctx.problem.solution_reasoning_trace:
-                dataset[org_i][
-                    "solution_reasoning_trace"
-                ] = ctx.problem.solution_reasoning_trace
-            if ctx.problem.testcase_reasoning_trace:
-                dataset[org_i][
-                    "testcase_reasoning_trace"
-                ] = ctx.problem.testcase_reasoning_trace
-            if ctx.testbench.reasoning_trace:
-                dataset[org_i]["tb_reasoning_trace"] = ctx.testbench.reasoning_trace
+            # if ctx.problem.question_reasoning_trace:
+            #     dataset[org_i][
+            #         "question_reasoning_trace"
+            #     ] = ctx.problem.question_reasoning_trace
+            # if ctx.problem.solution_reasoning_trace:
+            #     dataset[org_i][
+            #         "solution_reasoning_trace"
+            #     ] = ctx.problem.solution_reasoning_trace
+            # if ctx.problem.testcase_reasoning_trace:
+            #     dataset[org_i][
+            #         "testcase_reasoning_trace"
+            #     ] = ctx.problem.testcase_reasoning_trace
+            # if ctx.testbench.reasoning_trace:
+            #     dataset[org_i]["tb_reasoning_trace"] = ctx.testbench.reasoning_trace
 
             output["dataset"].append(dataset[org_i])
 

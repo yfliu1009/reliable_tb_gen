@@ -182,6 +182,10 @@ class TestbenchGeneration(LLMGeneration):
         super().__init__(llm, contexts, feedback_key=feedback_key)
 
     def run(self, ctx: RefinementCtx):
+
+        # print(ctx.problem.question, "\n###question for tb generation###\n")
+        # print(ctx.problem.answer, "\n###answer for tb generation###\n")
+
         response = self.llm.generate(
             "\n\n".join([self.context, ctx.problem.quoted_question])
         )
@@ -233,7 +237,7 @@ class TestbenchRevision(LLMGeneration):
             )
         )
 
-        ctx.length += len(prompt)
+        # ctx.length += len(prompt)
 
         ctx.feedbacks[self.feedback_key] = response
 
@@ -302,6 +306,73 @@ class RefinementPipeline:
                         else []
                     ),
                     TestbenchGeneration(llm, feedback_key="testbench_generation"),
+                    TestbenchSilmulation_TC(),
+                    *(
+                        TestbenchRevision(
+                            llm, feedback_key="testbench_revision", enable_ast=True
+                        ),
+                        TestbenchSilmulation_TC(),
+                    )
+                    * tb_revision_max_retries,  # tb revision max retries = 3
+                ]
+                if steps is None
+                else steps
+            )
+
+
+        print(self.steps)
+
+    def __call__(self, ctx: RefinementCtx) -> RefinementCtx:
+        print(f"start running {ctx.problem.id}...")
+        for step in self.steps:
+            ctx = step.run(ctx)
+
+            if ctx.finished:
+                print(f"{ctx.problem.id} finished!")
+                break
+
+        return ctx
+
+
+
+
+class NewRefinementPipeline:
+    def __init__(
+        self, llm: LLM, steps: List[Step] = None, tb_revision_max_retries: int = 3
+    ):
+        if TESTCASE_PIPELINE:
+            self.steps = (
+                [
+                    QuestionGeneration(llm, feedback_key="question_generation"),
+                    SolutionGeneration(llm, feedback_key="solution_generation"),
+                    TestcaseGeneration(llm, feedback_key="testcase_generation"),
+                    TestbenchGeneration_TC(
+                        llm, feedback_key="testbench_generation_with_testcases"
+                    ),
+                    TestbenchSilmulation_TC(),
+                    *(
+                        TestbenchRevision_TC(
+                            llm,
+                            feedback_key="testbench_revision_with_testcases",
+                            enable_ast=True,
+                        ),
+                        TestbenchSilmulation_TC(),
+                    )
+                    * tb_revision_max_retries,  # tb revision max retries = 3
+                ]
+                if steps is None
+                else steps
+            )
+
+        else:
+            self.steps = (
+                [
+                    *(
+                        [QuestionRevision(llm, feedback_key="question_revision")]
+                        if QUESTION_REVISION
+                        else []
+                    ),
+                    TestbenchGeneration(llm, feedback_key="testbench_generation"),
                     TestbenchSilmulation(),
                     *(
                         TestbenchRevision(
@@ -328,6 +399,10 @@ class RefinementPipeline:
                 break
 
         return ctx
+
+
+
+
 
 
 ### NOTE: sequence correct, not test yet
@@ -476,25 +551,37 @@ class TestbenchSilmulation_TC(Step):
         _count = ctx._pipeline_metadata.setdefault(f"{self._label}_count", 0)
         ctx._pipeline_metadata[f"{self._label}_count"] += 1
 
-        id, answer, tb = ctx.problem.id, ctx.problem.refine_answer, ctx.testbench.code
+        id, answer, tb = ctx.problem.id, ctx.problem.answer, ctx.testbench.code
 
         sim_out = simulate(id, answer, tb)
 
+
+        # print(sim_out, "\nsimulation output\n\n")
         passed_cases = 0
         total_cases = 1
 
         import re
 
-        pattern = (
-            r"Number of passed test cases: (\d+).*Number of total test cases: (\d+)"
-        )
-        match = re.search(pattern, sim_out, re.DOTALL)
-        if match:
-            passed_cases = int(match.group(1))
-            total_cases = int(match.group(2))
 
-        # print(f"Passed test cases: {passed_cases}")
-        # print(f"Total test cases: {total_cases}")
+        passed_pattern = r"```Number of passed test cases:\s*(\d+)\s*```"
+        total_pattern = r"```Number of total test cases:\s*(\d+)\s*```"
+
+        passed_match = re.search(passed_pattern, sim_out)
+        total_match = re.search(total_pattern, sim_out)
+
+        if passed_match and total_match:
+            passed_cases = int(passed_match.group(1))
+            total_cases = int(total_match.group(1))
+        # pattern = (
+        #     r"Number of passed test cases: (\d+).*Number of total test cases: (\d+)"
+        # )
+        # match = re.search(pattern, sim_out, re.DOTALL)
+        # if match:
+        #     passed_cases = int(match.group(1))
+        #     total_cases = int(match.group(2))
+
+        print(f"Passed test cases: {passed_cases}")
+        print(f"Total test cases: {total_cases}")
 
         tb_score = passed_cases / total_cases if total_cases > 0 else 0
 
@@ -536,8 +623,8 @@ class TestbenchRevision_TC(LLMGeneration):
             [
                 self.context,
                 ctx.problem.quoted_question,
-                ctx.problem.quoted_refine_answer,
-                ctx.problem.get_quoted_refine_answer_ast(self.parser_func),
+                ctx.problem.quoted_answer,
+                ctx.problem.get_quoted_answer_ast(self.parser_func),
                 ctx.testbench.quoted_code,
                 ctx.testbench.get_quoted_code_ast(self.parser_func),
                 ctx.testbench.quoted_simulation_output,
@@ -684,7 +771,7 @@ class SolutionGeneration(LLMGeneration):
         if code:
             ctx.problem.solution_reasoning_trace = reasoning_trace
             # ctx.problem.answer = code
-            ctx.problem.refine_answer = code
+            ctx.problem.answer = code
             ctx.logs["solution"] = True
         else:
             ctx.logs["solution"] = False

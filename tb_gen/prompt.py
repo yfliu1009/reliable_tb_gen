@@ -41,6 +41,7 @@ Generate a testbench for the following Verilog coding problem.
 The testbench must include 10 test cases covering a broad range of scenarios.
 Also, it must print meaningful information about the failed test cases to help with debugging.
 Most importantly, the testbench must print the number of passed test cases and the number of total test cases enclosed by triple backticks to the terminal.
+The testbench should only print the number of passed test cases and the number of total test cases at the end of the simulation and nothing else.
 Format: ```Number of passed test cases: 8``` and ```Number of total test cases: 10```.
 Enclose your testbench code with [BEGIN] and [DONE]. Only provide me the testbench and nothing else.
 example: [BEGIN]\n Testbench \n [DONE]"""
@@ -76,6 +77,7 @@ TB_TESTCASE_GUIDE = """Act as a senior Verilog verification engineer.
 Generate a testbench for the following Verilog coding problem with given testcases. 
 Also, it must print meaningful information about the failed test cases to help with debugging.
 Most importantly, the testbench must print the number of passed test cases and the number of total test cases enclosed by triple backticks to the terminal.
+The testbench should only print the number of passed test cases and the number of total test cases at the end of the simulation and nothing else.
 Format: ```Number of passed test cases: 8``` and ```Number of total test cases: 10```.
 Enclose your testbench code with [BEGIN] and [DONE]. Only provide me the testbench and nothing else.
 example: [BEGIN]\n Testbench \n [DONE]
