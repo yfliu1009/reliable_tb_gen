@@ -27,9 +27,11 @@ QUESTION_REVISION = (
     True  # if false, skip question revision -> directly generate testbench
 )
 
-TESTCASE_PIPELINE = False  # if true, use testcase generation pipeline
+
+BASE_PIPELINE = False # if true, use base pipeline
 HINT_FILTERED_PIPELINE = False  # if true, use hint-filtered pipeline for testbench revision
-PREGENERATION = False  # if true, pre-generate all feedbacks for each step and store in ctx.feedbacks
+TESTCASE_PIPELINE = False  # if true, use testcase generation pipeline
+PREGENERATION = True  # if true, pre-generate all feedbacks for each step and store in ctx.feedbacks
 
 # base
 class Step(ABC):
@@ -338,13 +340,52 @@ class RefinementPipeline:
 
 class NewRefinementPipeline:
     def __init__(
-        self, llm: LLM, steps: List[Step] = None, tb_revision_max_retries: int = 3
+        self, llm: LLM, steps: List[Step] = None, tb_revision_max_retries: int = 6
     ):
-        if TESTCASE_PIPELINE:
+        if BASE_PIPELINE:
             self.steps = (
                 [
-                    QuestionGeneration(llm, feedback_key="question_generation"),
-                    SolutionGeneration(llm, feedback_key="solution_generation"),
+                    *(
+                        [QuestionRevision(llm, feedback_key="question_revision")]
+                        if QUESTION_REVISION
+                        else []
+                    ),
+                    TestbenchGeneration(llm, feedback_key="testbench_generation"),
+                    TestbenchSilmulation_TC(),
+                    *(
+                        TestbenchRevision(
+                            llm, feedback_key="testbench_revision", enable_ast=True
+                        ),
+                        TestbenchSilmulation_TC(),
+                    )
+                    * tb_revision_max_retries,  # tb revision max retries = 6
+                ]
+                if steps is None
+                else steps
+            )
+        elif HINT_FILTERED_PIPELINE:
+            self.steps = (
+                [
+                    QuestionRevision(llm, feedback_key="question_revision"),
+                    HintFilter(llm, feedback_key="hint_filter"),
+                    TestbenchGeneration(llm, feedback_key="testbench_generation"),
+                    TestbenchSilmulation_TC(),
+                    *(
+                        TestbenchRevision(
+                            llm, feedback_key="testbench_revision", enable_ast=True
+                        ),
+                        TestbenchSilmulation_TC(),
+                    )
+                    * tb_revision_max_retries,  # tb revision max retries = 6
+                ]
+                if steps is None
+                else steps
+            )
+        elif TESTCASE_PIPELINE:
+            self.steps = (
+                [
+                    QuestionRevision(llm, feedback_key="question_revision"),
+                    HintFilter(llm, feedback_key="hint_filter"),
                     TestcaseGeneration(llm, feedback_key="testcase_generation"),
                     TestbenchGeneration_TC(
                         llm, feedback_key="testbench_generation_with_testcases"
@@ -358,33 +399,93 @@ class NewRefinementPipeline:
                         ),
                         TestbenchSilmulation_TC(),
                     )
-                    * tb_revision_max_retries,  # tb revision max retries = 3
+                    * tb_revision_max_retries,  # tb revision max retries = 6
                 ]
                 if steps is None
                 else steps
             )
-
-        else:
+        elif PREGENERATION:
             self.steps = (
                 [
-                    *(
-                        [QuestionRevision(llm, feedback_key="question_revision")]
-                        if QUESTION_REVISION
-                        else []
+                    TestcaseGeneration(llm, feedback_key="testcase_generation"),
+                    TestbenchGeneration_TC(
+                        llm, feedback_key="testbench_generation_with_testcases"
                     ),
-                    TestbenchGeneration(llm, feedback_key="testbench_generation"),
-                    TestbenchSilmulation(),
+                    TestbenchSilmulation_TC(),
                     *(
-                        TestbenchRevision(
-                            llm, feedback_key="testbench_revision", enable_ast=True
+                        TestbenchRevision_TC(
+                            llm,
+                            feedback_key="testbench_revision_with_testcases",
+                            enable_ast=True,
                         ),
-                        TestbenchSilmulation(),
+                        TestbenchSilmulation_TC(),
                     )
-                    * tb_revision_max_retries,  # tb revision max retries = 3
+                    * 3,  # pregen tb revision max retries = 6
+                    QuestionGeneration(llm, feedback_key="question_generation"),
+                    SolutionGeneration(llm, feedback_key="solution_generation"),
+                    HintFilter(llm, feedback_key="hint_filter"),
+                    TestcaseGeneration(llm, feedback_key="testcase_generation"),
+                    TestbenchGeneration_TC(
+                        llm, feedback_key="testbench_generation_with_testcases"
+                    ),
+                    TestbenchSilmulation_TC(),
+                    *(
+                        TestbenchRevision_TC(
+                            llm,
+                            feedback_key="testbench_revision_with_testcases",
+                            enable_ast=True,
+                        ),
+                        TestbenchSilmulation_TC(),
+                    )
+                    * 3,  # pregen tb revision max retries = 6
                 ]
                 if steps is None
                 else steps
             )
+            # self.steps = (
+            #     [
+            #         QuestionGeneration(llm, feedback_key="question_generation"),
+            #         SolutionGeneration(llm, feedback_key="solution_generation"),
+            #         TestcaseGeneration(llm, feedback_key="testcase_generation"),
+            #         TestbenchGeneration_TC(
+            #             llm, feedback_key="testbench_generation_with_testcases"
+            #         ),
+            #         TestbenchSilmulation_TC(),
+            #         *(
+            #             TestbenchRevision_TC(
+            #                 llm,
+            #                 feedback_key="testbench_revision_with_testcases",
+            #                 enable_ast=True,
+            #             ),
+            #             TestbenchSilmulation_TC(),
+            #         )
+            #         * tb_revision_max_retries,  # tb revision max retries = 6
+            #     ]
+            #     if steps is None
+            #     else steps
+            # )
+
+        # else:
+        #     self.steps = (
+        #         [
+        #             *(
+        #                 [QuestionRevision(llm, feedback_key="question_revision")]
+        #                 if QUESTION_REVISION
+        #                 else []
+        #             ),
+        #             TestbenchGeneration(llm, feedback_key="testbench_generation"),
+        #             TestbenchSilmulation(),
+        #             *(
+        #                 TestbenchRevision(
+        #                     llm, feedback_key="testbench_revision", enable_ast=True
+        #                 ),
+        #                 TestbenchSilmulation(),
+        #             )
+        #             * tb_revision_max_retries,  # tb revision max retries = 3
+        #         ]
+        #         if steps is None
+        #         else steps
+        #     )
 
 
         print(self.steps)

@@ -8,7 +8,8 @@ from textwrap import dedent
 # Similarly, enclose its corresponding solution with [BEGIN SOL] and [END SOL]."""
 
 HINT_FILTER = """You are a senior Verilog designer. Your task is to make sure there is no hint in the question that can help solve the problem.
-If you find any hint in the question, please output YES enclosed by three asterisks and provide a revised version of the question that does not contain any hint. 
+If you find any hint in the question, please output YES enclosed by three asterisks and provide a revised version of the question that does not contain any hint.
+Also, tell me why you think the original question contains hints and how you revise it to remove the hints.
 The revised question should be consistent with the original solution. The format of the revised question should be same as the original question.
 Enclose the revised question with [BEGIN PROB] and [END PROB]. If you think there is no hint in the question, please outpout NO enclosed by three asterisks.
 Here is the question and the solution:

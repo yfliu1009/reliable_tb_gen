@@ -64,7 +64,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from .llm import get_llm
 from .schema import RefinementCtx, Problem
-from .pipeline import RefinementPipeline
+from .pipeline import RefinementPipeline, NewRefinementPipeline
 from .verilog.verilog import format_prompts
 from .logger import setup_output_log_dir, get_logger
 
@@ -117,7 +117,7 @@ def main(
     problems = [Problem(id=i, question=q, answer=a) for i, q, a in prompts]
     ctxs = [RefinementCtx.from_problem(p) for p in problems]
 
-    pipeline = RefinementPipeline(
+    pipeline = NewRefinementPipeline(
         llm=get_llm(
             provider=provider,
             model_name=model_name,

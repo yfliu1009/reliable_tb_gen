@@ -6,7 +6,7 @@ import subprocess
 
 from tb_gen.prompt import VERIREASON_SUFF, PYRANET_PREF, DEEPX_PREF
 
-RANDOM_SELECT = True  # If True, select random problems from the dataset
+RANDOM_SELECT = False  # If True, select random problems from the dataset
 
 
 def simulate(i: int, code: str, tb: str) -> str:
