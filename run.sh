@@ -23,12 +23,11 @@
 #     START=$((START + STEP))
 # done
 
-python3 -m tb_gen.refine_dataset --input-path ../../../disk2/llm_team/silicon_mind_dataset/PyraNet-Verilog/PyraNetOnVeriBest.csv \
-    --start-index 50 \
-    --n-problems 1 \
+python3 -m tb_gen.refine_dataset --input-path ./cleaned_PyraNet.csv \
+    --n-problems 2 \
     --dataset-type 2 \
-    --provider openai \
-    --model-name "gpt-4.1" \
+    --provider gemini \
+    --model-name "gemini-2.5-pro" \
     --output-dir tb_gen/result
 
 # python3 total_unusable_counter.py > total_unusable_counter.log

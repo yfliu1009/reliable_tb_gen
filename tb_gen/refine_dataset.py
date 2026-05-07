@@ -64,7 +64,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from .llm import get_llm
 from .schema import RefinementCtx, Problem
-from .pipeline import RefinementPipeline, NewRefinementPipeline
+from .pipeline import NewRefinementPipeline
 from .verilog.verilog import format_prompts
 from .logger import setup_output_log_dir, get_logger
 

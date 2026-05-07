@@ -29,9 +29,9 @@ QUESTION_REVISION = (
 
 
 BASE_PIPELINE = False # if true, use base pipeline
-HINT_FILTERED_PIPELINE = False  # if true, use hint-filtered pipeline for testbench revision
+HINT_FILTERED_PIPELINE = True  # if true, use hint-filtered pipeline for testbench revision
 TESTCASE_PIPELINE = False  # if true, use testcase generation pipeline
-PREGENERATION = True  # if true, pre-generate all feedbacks for each step and store in ctx.feedbacks
+PREGENERATION = False  # if true, pre-generate all feedbacks for each step and store in ctx.feedbacks
 
 # base
 class Step(ABC):
