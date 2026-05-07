@@ -271,69 +271,69 @@ class TestbenchRevision(LLMGeneration):
         return ctx
 
 
-class RefinementPipeline:
-    def __init__(
-        self, llm: LLM, steps: List[Step] = None, tb_revision_max_retries: int = 3
-    ):
-        if TESTCASE_PIPELINE:
-            self.steps = (
-                [
-                    QuestionGeneration(llm, feedback_key="question_generation"),
-                    SolutionGeneration(llm, feedback_key="solution_generation"),
-                    TestcaseGeneration(llm, feedback_key="testcase_generation"),
-                    TestbenchGeneration_TC(
-                        llm, feedback_key="testbench_generation_with_testcases"
-                    ),
-                    TestbenchSilmulation_TC(),
-                    *(
-                        TestbenchRevision_TC(
-                            llm,
-                            feedback_key="testbench_revision_with_testcases",
-                            enable_ast=True,
-                        ),
-                        TestbenchSilmulation_TC(),
-                    )
-                    * tb_revision_max_retries,  # tb revision max retries = 3
-                ]
-                if steps is None
-                else steps
-            )
+# class RefinementPipeline:
+#     def __init__(
+#         self, llm: LLM, steps: List[Step] = None, tb_revision_max_retries: int = 3
+#     ):
+#         if TESTCASE_PIPELINE:
+#             self.steps = (
+#                 [
+#                     QuestionGeneration(llm, feedback_key="question_generation"),
+#                     SolutionGeneration(llm, feedback_key="solution_generation"),
+#                     TestcaseGeneration(llm, feedback_key="testcase_generation"),
+#                     TestbenchGeneration_TC(
+#                         llm, feedback_key="testbench_generation_with_testcases"
+#                     ),
+#                     TestbenchSilmulation_TC(),
+#                     *(
+#                         TestbenchRevision_TC(
+#                             llm,
+#                             feedback_key="testbench_revision_with_testcases",
+#                             enable_ast=True,
+#                         ),
+#                         TestbenchSilmulation_TC(),
+#                     )
+#                     * tb_revision_max_retries,  # tb revision max retries = 3
+#                 ]
+#                 if steps is None
+#                 else steps
+#             )
 
-        else:
-            self.steps = (
-                [
-                    *(
-                        [QuestionRevision(llm, feedback_key="question_revision")]
-                        if QUESTION_REVISION
-                        else []
-                    ),
-                    TestbenchGeneration(llm, feedback_key="testbench_generation"),
-                    TestbenchSilmulation_TC(),
-                    *(
-                        TestbenchRevision(
-                            llm, feedback_key="testbench_revision", enable_ast=True
-                        ),
-                        TestbenchSilmulation_TC(),
-                    )
-                    * tb_revision_max_retries,  # tb revision max retries = 3
-                ]
-                if steps is None
-                else steps
-            )
+#         else:
+#             self.steps = (
+#                 [
+#                     *(
+#                         [QuestionRevision(llm, feedback_key="question_revision")]
+#                         if QUESTION_REVISION
+#                         else []
+#                     ),
+#                     TestbenchGeneration(llm, feedback_key="testbench_generation"),
+#                     TestbenchSilmulation_TC(),
+#                     *(
+#                         TestbenchRevision(
+#                             llm, feedback_key="testbench_revision", enable_ast=True
+#                         ),
+#                         TestbenchSilmulation_TC(),
+#                     )
+#                     * tb_revision_max_retries,  # tb revision max retries = 3
+#                 ]
+#                 if steps is None
+#                 else steps
+#             )
 
 
-        print(self.steps)
+#         print(self.steps)
 
-    def __call__(self, ctx: RefinementCtx) -> RefinementCtx:
-        print(f"start running {ctx.problem.id}...")
-        for step in self.steps:
-            ctx = step.run(ctx)
+#     def __call__(self, ctx: RefinementCtx) -> RefinementCtx:
+#         print(f"start running {ctx.problem.id}...")
+#         for step in self.steps:
+#             ctx = step.run(ctx)
 
-            if ctx.finished:
-                print(f"{ctx.problem.id} finished!")
-                break
+#             if ctx.finished:
+#                 print(f"{ctx.problem.id} finished!")
+#                 break
 
-        return ctx
+#         return ctx
 
 
 
